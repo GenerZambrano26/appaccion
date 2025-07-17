@@ -2,6 +2,7 @@
 import yfinance as yf
 import os
 import pandas as pd
+import ta
 
 app = Flask(__name__)
 
@@ -46,7 +47,43 @@ def obtener_tasa():
 
 
 
+@app.route('/rsi', methods=['GET'])
+def calcular_rsi():
+    ticker = request.args.get('ticker')
 
+    if not ticker:
+        return jsonify({'error': 'Falta el parámetro "ticker".'}), 400
+
+    try:
+        # Descargar datos de los últimos 3 meses diarios
+        data = yf.download(ticker, period="3mo", interval="1d")
+
+        if data.empty:
+            return jsonify({'error': 'No se encontraron datos para el ticker proporcionado.'}), 404
+
+        # Calcular RSI
+        rsi = ta.momentum.RSIIndicator(close=data['Close'], window=14).rsi()
+        data['RSI'] = rsi
+
+        ultimo_rsi = round(data['RSI'].iloc[-1], 2)
+        estado = "neutral"
+        if ultimo_rsi > 70:
+            estado = "sobrecompra"
+        elif ultimo_rsi < 30:
+            estado = "sobreventa"
+
+        # Resultado
+        resultado = {
+            'ticker': ticker.upper(),
+            'ultimo_rsi': ultimo_rsi,
+            'estado': estado,
+            'ultimos_valores': data[['Close', 'RSI']].tail().to_dict()
+        }
+
+        return jsonify(resultado)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
