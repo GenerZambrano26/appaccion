@@ -137,9 +137,9 @@ def analisis_indicadores():
     if pd.isna(rsi_valor):
         rsi_resultado = "RSI no disponible"
     elif rsi_valor < 30:
-        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido 📉"
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido "
     elif rsi_valor > 70:
-        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado 📈"
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado "
     else:
         rsi_eval = f"RSI: {rsi_valor:.2f} - Neutro"
 
@@ -147,11 +147,11 @@ def analisis_indicadores():
     macd_valor = df["MACD"].iloc[-1]
     señal_macd_valor = df["Señal_MACD"].iloc[-1]
     if pd.isna(macd_valor) or pd.isna(señal_macd_valor):
-        macd_eval = "❓ MACD no disponible"
+        macd_eval = "MACD no disponible"
     elif macd_valor > señal_macd_valor:
-        macd_eval = "🟢 Señal de compra"
+        macd_eval = " Senal de compra"
     else:
-        macd_eval = "🔻 Señal de venta"
+        macd_eval = " Senal de venta"
 
     # Medias móviles
     sma_50 = df["SMA_50"].iloc[-1]
@@ -160,20 +160,20 @@ def analisis_indicadores():
     precio_actual = df["Close"].iloc[-1]
 
     sma_50_eval = (
-        "🟢 Precio > SMA 50" if not sma_50 and precio_actual > sma_50 else "🔻 Precio < SMA 50"
+        " Precio > SMA 50" if not sma_50 and precio_actual > sma_50 else " Baj Precio < SMA 50"
     )
     sma_200_eval = (
-        "🟢 Precio > SMA 200" if not sma_200 and precio_actual > sma_200 else "🔻 Precio < SMA 200"
+        " Precio > SMA 200" if not sma_200 and precio_actual > sma_200 else "Ba Precio < SMA 200"
     )
     ema_20_eval = (
-        "🟢 Precio > EMA 20" if not ema_20 and precio_actual > ema_20 else "🔻 Precio < EMA 20"
+        " Precio > EMA 20" if not ema_20 and precio_actual > ema_20 else "Baj Precio < EMA 20"
     )
 
     # Volumen
     volumen_actual = df["Volume"].iloc[-1]
     volumen_prom_20 = df["Volumen_promedio_20"].iloc[-1]
     volumen_eval = (
-        "📈 Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else "📉 Volumen bajo"
+        " Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else " Volumen bajo"
     )
 
     resumen = {
