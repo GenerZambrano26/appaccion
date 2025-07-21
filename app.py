@@ -87,223 +87,117 @@ def calcular_rsi():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# def calcular_macd(df):
-#     exp1 = df['Close'].ewm(span=12, adjust=False).mean()
-#     exp2 = df['Close'].ewm(span=26, adjust=False).mean()
-#     macd = exp1 - exp2
-#     signal = macd.ewm(span=9, adjust=False).mean()
-#     df['MACD'] = macd
-#     df['MACD_Signal'] = signal
-#     return df
+def calcular_rsi(df, periodo=14):
+    delta = df["Close"].diff()
+    ganancia = delta.where(delta > 0, 0)
+    perdida = -delta.where(delta < 0, 0)
 
-# def calcular_medias_moviles(df):
-#     df['SMA_50'] = df['Close'].rolling(window=50).mean()
-#     df['SMA_200'] = df['Close'].rolling(window=200).mean()
-#     df['EMA_20'] = df['Close'].ewm(span=20, adjust=False).mean()
-#     return df
+    media_ganancia = ganancia.rolling(window=periodo).mean()
+    media_perdida = perdida.rolling(window=periodo).mean()
 
-# def calcular_volumen(df):
-#     df['Volumen_Prom_20'] = df['Volume'].rolling(window=20).mean()
-#     return df
+    rs = media_ganancia / media_perdida
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
 
-# def calcular_rsi(df, ticker, window=14):
-#     if isinstance(df.columns, pd.MultiIndex):
-#         close_prices = df[("Close", ticker)].dropna()
-#     else:
-#         close_prices = df["Close"].dropna()
+def calcular_macd(df, rapida=12, lenta=26, señal=9):
+    ema_rapida = df["Close"].ewm(span=rapida, adjust=False).mean()
+    ema_lenta = df["Close"].ewm(span=lenta, adjust=False).mean()
+    macd = ema_rapida - ema_lenta
+    señal_macd = macd.ewm(span=señal, adjust=False).mean()
+    return macd, señal_macd
 
-#     rsi = RSIIndicator(close=close_prices, window=window).rsi()
-#     df["RSI"] = rsi
-#     return df
+def calcular_sma(df, periodo=50):
+    return df["Close"].rolling(window=periodo).mean()
 
-# def obtener_datos_con_indicadores(ticker, periodo='6mo', intervalo='1d'):
-#     df = yf.download(ticker, period=periodo, interval=intervalo, progress=False, timeout=30)
-
-#     if df.empty:
-#         return None
-
-#     df = calcular_macd(df)
-#     df = calcular_medias_moviles(df)
-#     df = calcular_volumen(df)
-#     df = calcular_rsi(df, ticker)
-
-#     return df
-
-# @app.route('/analisis', methods=['GET'])
-# def analisis_indicadores():
-#     ticker = request.args.get('ticker')
-
-#     df = obtener_datos_con_indicadores(ticker)
-#     if df is None:
-#         return jsonify({"error": "No se pudieron obtener datos."}), 404
-
-#     # Última fila
-#     ultima = df.iloc[-1]
-
-#     # RSI
-#     rsi_valor = round(ultima["RSI"], 2)
-#     rsi_estado = "neutral"
-#     if rsi_valor > 70:
-#         rsi_estado = "sobrecompra"
-#     elif rsi_valor < 30:
-#         rsi_estado = "sobreventa"
-
-#     # MACD
-#     macd_valor = round(ultima["MACD"], 2)
-#     signal_valor = round(ultima["MACD_Signal"], 2)
-#     macd_estado = "compra" if macd_valor > signal_valor else "venta"
-
-#     # Medias Móviles
-#     sma50 = ultima["SMA_50"]
-#     sma200 = ultima["SMA_200"]
-#     ema20 = ultima["EMA_20"]
-#     precio = ultima["Close"]
-#     tendencia_estado = "alcista" if sma50 > sma200 else "bajista"
-
-#     # Volumen
-#     volumen_actual = ultima["Volume"]
-#     volumen_prom = ultima["Volumen_Prom_20"]
-#     if volumen_actual > volumen_prom * 1.2:
-#         volumen_estado = "volumen alto"
-#     elif volumen_actual < volumen_prom * 0.8:
-#         volumen_estado = "volumen bajo"
-#     else:
-#         volumen_estado = "normal"
-
-#     resultado = {
-#         "ticker": ticker.upper(),
-#         "fecha": str(df.index[-1].date()),
-#         "precio": round(precio, 2),
-#         "rsi": {
-#             "valor": rsi_valor,
-#             "estado": rsi_estado
-#         },
-#         "macd": {
-#             "valor": macd_valor,
-#             "signal": signal_valor,
-#             "estado": macd_estado
-#         },
-#         "tendencia": {
-#             "sma_50": round(sma50, 2),
-#             "sma_200": round(sma200, 2),
-#             "ema_20": round(ema20, 2),
-#             "estado": tendencia_estado
-#         },
-#         "volumen": {
-#             "actual": int(volumen_actual),
-#             "prom_20": int(volumen_prom),
-#             "estado": volumen_estado
-#         }
-#     }
-
-#     return jsonify(resultado)
-def calcular_macd(df):
-    exp1 = df['Close'].ewm(span=12, adjust=False).mean()
-    exp2 = df['Close'].ewm(span=26, adjust=False).mean()
-    macd = exp1 - exp2
-    signal = macd.ewm(span=9, adjust=False).mean()
-    df['MACD'] = macd
-    df['MACD_Signal'] = signal
-    return df
-
-def calcular_medias_moviles(df):
-    df['SMA_50'] = df['Close'].rolling(window=50).mean()
-    df['SMA_200'] = df['Close'].rolling(window=200).mean()
-    df['EMA_20'] = df['Close'].ewm(span=20, adjust=False).mean()
-    return df
-
-def calcular_volumen(df):
-    df['Volumen_Prom_20'] = df['Volume'].rolling(window=20).mean()
-    return df
-
-def calcular_rsi(df, window=14):
-    rsi = RSIIndicator(close=df["Close"], window=window).rsi()
-    df["RSI"] = rsi
-    return df
-
-def obtener_datos_con_indicadores(ticker, periodo='6mo', intervalo='1d'):
-    df = yf.download(ticker, period=periodo, interval=intervalo, progress=False, timeout=30)
-
-    if df.empty:
-        return None
-
-    df = calcular_macd(df)
-    df = calcular_medias_moviles(df)
-    df = calcular_volumen(df)
-    df = calcular_rsi(df)
-
-    # Elimina filas incompletas por rolling (NaN al inicio)
-    df = df.dropna()
-
-    return df
+def calcular_ema(df, periodo=20):
+    return df["Close"].ewm(span=periodo, adjust=False).mean()
 
 @app.route('/analisis', methods=['GET'])
 def analisis_indicadores():
     ticker = request.args.get('ticker')
+    df = yf.download(ticker, period="6mo", interval="1d")
+    if df.empty:
+        return jsonify({"error": "No se pudo obtener datos del ticker."}), 400
 
-    df = obtener_datos_con_indicadores(ticker)
-    if df is None or df.empty:
-        return jsonify({"error": "No se pudieron obtener datos."}), 404
+    df["RSI"] = calcular_rsi(df)
+    df["MACD"], df["Señal_MACD"] = calcular_macd(df)
+    df["SMA_50"] = calcular_sma(df, 50)
+    df["SMA_200"] = calcular_sma(df, 200)
+    df["EMA_20"] = calcular_ema(df, 20)
 
-    ultima = df.iloc[-1]
+    df["Volumen_promedio_20"] = df["Volume"].rolling(window=20).mean()
 
-    # RSI
-    rsi_valor = round(ultima["RSI"], 2)
-    rsi_estado = "neutral"
-    if rsi_valor > 70:
-        rsi_estado = "sobrecompra"
+    ult = df.iloc[-1]
+
+    rsi_valor = df["RSI"].iloc[-1]
+
+
+    rsi_eval =""
+
+    if pd.isna(rsi_valor):
+        rsi_resultado = "RSI no disponible"
     elif rsi_valor < 30:
-        rsi_estado = "sobreventa"
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido 📉"
+    elif rsi_valor > 70:
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado 📈"
+    else:
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Neutro"
 
-    # MACD
-    macd_valor = round(ultima["MACD"], 2)
-    signal_valor = round(ultima["MACD_Signal"], 2)
-    macd_estado = "compra" if macd_valor > signal_valor else "venta"
+    # MACD Evaluación
+    macd_valor = df["MACD"].iloc[-1]
+    señal_macd_valor = df["Señal_MACD"].iloc[-1]
+    if pd.isna(macd_valor) or pd.isna(señal_macd_valor):
+        macd_eval = "❓ MACD no disponible"
+    elif macd_valor > señal_macd_valor:
+        macd_eval = "🟢 Señal de compra"
+    else:
+        macd_eval = "🔻 Señal de venta"
 
-    # Medias Móviles
-    sma50 = ultima["SMA_50"]
-    sma200 = ultima["SMA_200"]
-    ema20 = ultima["EMA_20"]
-    precio = ultima["Close"]
-    tendencia_estado = "alcista" if sma50 > sma200 else "bajista"
+    # Medias móviles
+    sma_50 = df["SMA_50"].iloc[-1]
+    sma_200 = df["SMA_200"].iloc[-1]
+    ema_20 = df["EMA_20"].iloc[-1]
+    precio_actual = df["Close"].iloc[-1]
+
+    sma_50_eval = (
+        "🟢 Precio > SMA 50" if not sma_50 and precio_actual > sma_50 else "🔻 Precio < SMA 50"
+    )
+    sma_200_eval = (
+        "🟢 Precio > SMA 200" if not sma_200 and precio_actual > sma_200 else "🔻 Precio < SMA 200"
+    )
+    ema_20_eval = (
+        "🟢 Precio > EMA 20" if not ema_20 and precio_actual > ema_20 else "🔻 Precio < EMA 20"
+    )
 
     # Volumen
-    volumen_actual = ultima["Volume"]
-    volumen_prom = ultima["Volumen_Prom_20"]
-    if volumen_actual > volumen_prom * 1.2:
-        volumen_estado = "volumen alto"
-    elif volumen_actual < volumen_prom * 0.8:
-        volumen_estado = "volumen bajo"
-    else:
-        volumen_estado = "normal"
+    volumen_actual = df["Volume"].iloc[-1]
+    volumen_prom_20 = df["Volumen_promedio_20"].iloc[-1]
+    volumen_eval = (
+        "📈 Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else "📉 Volumen bajo"
+    )
 
-    resultado = {
-        "ticker": ticker.upper(),
-        "fecha": str(df.index[-1].date()),
-        "precio": round(precio, 2),
-        "rsi": {
-            "valor": rsi_valor,
-            "estado": rsi_estado
-        },
-        "macd": {
-            "valor": macd_valor,
-            "signal": signal_valor,
-            "estado": macd_estado
-        },
-        "tendencia": {
-            "sma_50": round(sma50, 2),
-            "sma_200": round(sma200, 2),
-            "ema_20": round(ema20, 2),
-            "estado": tendencia_estado
-        },
-        "volumen": {
-            "actual": int(volumen_actual),
-            "prom_20": int(volumen_prom),
-            "estado": volumen_estado
-        }
+    resumen = {
+        "Ticker": ticker.upper(),
+        "Fecha": str(ult.name.date()),
+        "Precio": round(precio_actual, 2),
+        "RSI": round(rsi_valor, 2) if not pd.isna(rsi_valor) else "N/D",
+        "Evaluación RSI": rsi_eval,
+        "MACD": round(macd_valor, 4) if not pd.isna(macd_valor) else "N/D",
+        "Señal MACD": round(señal_macd_valor, 4) if not pd.isna(señal_macd_valor) else "N/D",
+        "Evaluación MACD": macd_eval,
+        "SMA 50": round(sma_50, 2) if not pd.isna(sma_50) else "N/D",
+        "SMA 200": round(sma_200, 2) if not pd.isna(sma_200) else "N/D",
+        "EMA 20": round(ema_20, 2) if not pd.isna(ema_20) else "N/D",
+        "Volumen actual": volumen_actual,
+        "Volumen promedio 20": round(volumen_prom_20, 2) if not pd.isna(volumen_prom_20) else "N/D",
+        "Evaluación Volumen": volumen_eval,
+        "Evaluación SMA 50": sma_50_eval,
+        "Evaluación SMA 200": sma_200_eval,
+        "Evaluación EMA 20": ema_20_eval
     }
+    # print(resumen)
+    return jsonify(resumen)
 
-    return jsonify(resultado)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
