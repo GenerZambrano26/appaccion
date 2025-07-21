@@ -179,7 +179,7 @@ def analisis_indicadores():
     resumen = {
         "Ticker": ticker.upper(),
         "Fecha": str(ult.name.date()),
-        "Precio": round(precio_actual, 2),
+        "Precio": round(precio_actual.iloc[0], 2) if not precio_actual.empty else "N/D",
         "RSI": round(rsi_valor, 2) if not pd.isna(rsi_valor) else "N/D",
         "Evaluación RSI": rsi_eval,
         "MACD": round(macd_valor, 4) if not pd.isna(macd_valor) else "N/D",
@@ -188,7 +188,7 @@ def analisis_indicadores():
         "SMA 50": round(sma_50, 2) if not pd.isna(sma_50) else "N/D",
         "SMA 200": round(sma_200, 2) if not pd.isna(sma_200) else "N/D",
         "EMA 20": round(ema_20, 2) if not pd.isna(ema_20) else "N/D",
-        "Volumen actual": volumen_actual,
+        "Volumen actual": int(volumen_actual.iloc[0]) if not volumen_actual.empty else "N/D",
         "Volumen promedio 20": round(volumen_prom_20, 2) if not pd.isna(volumen_prom_20) else "N/D",
         "Evaluación Volumen": volumen_eval,
         "Evaluación SMA 50": sma_50_eval,
@@ -196,9 +196,9 @@ def analisis_indicadores():
         "Evaluación EMA 20": ema_20_eval
     }
     # print(resumen)
-    resumen_dict = resumen.to_dict()  # Lo convertimos a dict para poder serializar
 
-    return jsonify(resumen_dict)
+
+    return jsonify(resumen)
 
 
 if __name__ == '__main__':
