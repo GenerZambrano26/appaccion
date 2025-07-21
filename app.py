@@ -129,8 +129,10 @@ def obtener_datos_con_indicadores(ticker, periodo='6mo', intervalo='1d'):
 
     return df
 
-@app.route("/analisis/<ticker>")
-def analisis_indicadores(ticker):
+@app.route('/analisis', methods=['GET'])
+def analisis_indicadores():
+    ticker = request.args.get('ticker')
+
     df = obtener_datos_con_indicadores(ticker)
     if df is None:
         return jsonify({"error": "No se pudieron obtener datos."}), 404
