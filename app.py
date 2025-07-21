@@ -196,7 +196,9 @@ def analisis_indicadores():
         "Evaluación EMA 20": ema_20_eval
     }
     # print(resumen)
-    return jsonify(resumen)
+    resumen_dict = resumen.to_dict()  # Lo convertimos a dict para poder serializar
+
+    return jsonify(resumen_dict)
 
 
 if __name__ == '__main__':
