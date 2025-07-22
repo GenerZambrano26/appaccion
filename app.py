@@ -119,27 +119,32 @@ def analisis_indicadores():
     if df.empty:
         return jsonify({"error": "No se pudo obtener datos del ticker."}), 400
 
+    # Indicadores técnicos
     df["RSI"] = calcular_rsi(df)
     df["MACD"], df["Señal_MACD"] = calcular_macd(df)
     df["SMA_50"] = calcular_sma(df, 50)
     df["SMA_200"] = calcular_sma(df, 200)
     df["EMA_20"] = calcular_ema(df, 20)
 
+    # Volumen promedio
     df["Volumen_promedio_20"] = df["Volume"].rolling(window=20).mean()
+
+    # Bandas de Bollinger
+    df['Media_BB'] = df['Close'].rolling(window=20).mean()
+    df['Desviacion_BB'] = df['Close'].rolling(window=20).std()
+    df['Banda_Superior'] = df['Media_BB'] + (2 * df['Desviacion_BB'])
+    df['Banda_Inferior'] = df['Media_BB'] - (2 * df['Desviacion_BB'])
 
     ult = df.iloc[-1]
 
     rsi_valor = df["RSI"].iloc[-1]
-
-
-    rsi_eval =""
-
+    rsi_eval = ""
     if pd.isna(rsi_valor):
-        rsi_resultado = "RSI no disponible"
+        rsi_eval = "RSI no disponible"
     elif rsi_valor < 30:
-        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido "
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido"
     elif rsi_valor > 70:
-        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado "
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado"
     else:
         rsi_eval = f"RSI: {rsi_valor:.2f} - Neutro"
 
@@ -149,9 +154,9 @@ def analisis_indicadores():
     if pd.isna(macd_valor) or pd.isna(señal_macd_valor):
         macd_eval = "MACD no disponible"
     elif macd_valor > señal_macd_valor:
-        macd_eval = " Senal de compra"
+        macd_eval = "Señal de compra"
     else:
-        macd_eval = " Senal de venta"
+        macd_eval = "Señal de venta"
 
     # Medias móviles
     sma_50 = df["SMA_50"].iloc[-1]
@@ -159,27 +164,54 @@ def analisis_indicadores():
     ema_20 = df["EMA_20"].iloc[-1]
     precio_actual = df["Close"].iloc[-1]
 
-    sma_50_eval = (
-        " Precio > SMA 50" if not sma_50 and precio_actual > sma_50 else " Baj Precio < SMA 50"
-    )
-    sma_200_eval = (
-        " Precio > SMA 200" if not sma_200 and precio_actual > sma_200 else "Ba Precio < SMA 200"
-    )
-    ema_20_eval = (
-        " Precio > EMA 20" if not ema_20 and precio_actual > ema_20 else "Baj Precio < EMA 20"
-    )
+    sma_50_eval = "Precio > SMA 50" if precio_actual > sma_50 else "Baj Precio < SMA 50"
+    sma_200_eval = "Precio > SMA 200" if precio_actual > sma_200 else "Ba Precio < SMA 200"
+    ema_20_eval = "Precio > EMA 20" if precio_actual > ema_20 else "Baj Precio < EMA 20"
 
     # Volumen
     volumen_actual = df["Volume"].iloc[-1]
     volumen_prom_20 = df["Volumen_promedio_20"].iloc[-1]
-    volumen_eval = (
-        " Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else " Volumen bajo"
-    )
+    volumen_eval = "Volumen alto" if volumen_actual > volumen_prom_20 else "Volumen bajo"
+
+    # Bandas de Bollinger
+    banda_sup = df['Banda_Superior'].iloc[-1]
+    banda_inf = df['Banda_Inferior'].iloc[-1]
+    bollinger_eval = "En banda" if banda_inf <= precio_actual <= banda_sup else ("Sobrecomprado (fuera banda sup)" if precio_actual > banda_sup else "Sobrevendido (fuera banda inf)")
+
+    # Recomendación general
+    score = 0
+    motivos = []
+
+    if precio_actual > ema_20:
+        score += 1
+        motivos.append("Precio por encima de EMA 20")
+    if precio_actual > sma_50:
+        score += 1
+        motivos.append("Precio por encima de SMA 50")
+    if precio_actual > sma_200:
+        score += 1
+        motivos.append("Precio por encima de SMA 200")
+    if macd_valor > señal_macd_valor:
+        score += 1
+        motivos.append("MACD cruzando hacia arriba")
+    if rsi_valor < 30:
+        score += 1
+        motivos.append("RSI en sobreventa")
+    if volumen_actual > volumen_prom_20:
+        score += 1
+        motivos.append("Volumen por encima del promedio")
+
+    if score >= 4:
+        recomendacion = "Comprar"
+    elif score <= 2:
+        recomendacion = "Vender"
+    else:
+        recomendacion = "Esperar"
 
     resumen = {
         "Ticker": ticker.upper(),
         "Fecha": str(ult.name.date()),
-        "Precio": round(precio_actual.iloc[0], 2) if not precio_actual.empty else "N/D",
+        "Precio": round(precio_actual, 2),
         "RSI": round(rsi_valor, 2) if not pd.isna(rsi_valor) else "N/D",
         "Evaluación RSI": rsi_eval,
         "MACD": round(macd_valor, 4) if not pd.isna(macd_valor) else "N/D",
@@ -188,15 +220,18 @@ def analisis_indicadores():
         "SMA 50": round(sma_50, 2) if not pd.isna(sma_50) else "N/D",
         "SMA 200": round(sma_200, 2) if not pd.isna(sma_200) else "N/D",
         "EMA 20": round(ema_20, 2) if not pd.isna(ema_20) else "N/D",
-        "Volumen actual": int(volumen_actual.iloc[0]) if not volumen_actual.empty else "N/D",
+        "Volumen actual": int(volumen_actual),
         "Volumen promedio 20": round(volumen_prom_20, 2) if not pd.isna(volumen_prom_20) else "N/D",
         "Evaluación Volumen": volumen_eval,
         "Evaluación SMA 50": sma_50_eval,
         "Evaluación SMA 200": sma_200_eval,
-        "Evaluación EMA 20": ema_20_eval
+        "Evaluación EMA 20": ema_20_eval,
+        "Banda Superior BB": round(banda_sup, 2),
+        "Banda Inferior BB": round(banda_inf, 2),
+        "Evaluación Bollinger": bollinger_eval,
+        "Recomendación general": recomendacion,
+        "Motivo": "; ".join(motivos) if motivos else "No se cumplen condiciones claras."
     }
-    # print(resumen)
-
 
     return jsonify(resumen)
 
