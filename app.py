@@ -166,20 +166,21 @@ def analisis_indicadores():
     precio_actual = df["Close"].iloc[-1]
 
     sma_50_eval = (
-        " Precio > SMA 50" if precio_actual > sma_50 else " Bajo Precio < SMA 50"
+        " Precio > SMA 50" if not sma_50 and precio_actual > sma_50 else "Bajo Precio < SMA 50"
     )
     sma_200_eval = (
-        " Precio > SMA 200" if precio_actual > sma_200 else " Bajo Precio < SMA 200"
+        " Precio > SMA 200" if not sma_200 and precio_actual > sma_200 else "Bajo Precio < SMA 200"
     )
     ema_20_eval = (
-        " Precio > EMA 20" if precio_actual > ema_20 else " Bajo Precio < EMA 20"
+        " Precio > EMA 20" if not ema_20 and precio_actual > ema_20 else "Bajo Precio < EMA 20"
     )
 
     # Volumen
     volumen_actual = df["Volume"].iloc[-1]
     volumen_prom_20 = df["Volumen_promedio_20"].iloc[-1]
-    volumen_eval = "Volumen alto" if volumen_actual > volumen_prom_20 else "Volumen bajo"
-
+    volumen_eval = (
+        "📈 Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else "📉 Volumen bajo"
+    )
     # Bandas de Bollinger
     banda_sup = df['Banda_Superior'].iloc[-1]
     banda_inf = df['Banda_Inferior'].iloc[-1]
