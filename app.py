@@ -142,9 +142,9 @@ def analisis_indicadores():
     if pd.isna(rsi_valor):
         rsi_eval = "RSI no disponible"
     elif rsi_valor < 30:
-        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido"
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrevendido posible compra"
     elif rsi_valor > 70:
-        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado"
+        rsi_eval = f"RSI: {rsi_valor:.2f} - Sobrecomprado posible venta"
     else:
         rsi_eval = f"RSI: {rsi_valor:.2f} - Neutro"
 
@@ -164,28 +164,35 @@ def analisis_indicadores():
     sma_200 = df["SMA_200"].iloc[-1]
     ema_20 = df["EMA_20"].iloc[-1]
     precio_actual = df["Close"].iloc[-1]
-
+    precio_actual =precio_actual.iloc[0]
     sma_50_eval = (
-        " Precio > SMA 50" if not sma_50 and precio_actual > sma_50 else "Bajo Precio < SMA 50"
+        " Precio > SMA 50" if  precio_actual > sma_50 else "Bajo Precio < SMA 50"
     )
     sma_200_eval = (
-        " Precio > SMA 200" if not sma_200 and precio_actual > sma_200 else "Bajo Precio < SMA 200"
+        " Precio > SMA 200" if  precio_actual > sma_200 else "Bajo Precio < SMA 200"
     )
     ema_20_eval = (
-        " Precio > EMA 20" if not ema_20 and precio_actual > ema_20 else "Bajo Precio < EMA 20"
+        " Precio > EMA 20" if precio_actual > ema_20 else "Bajo Precio < EMA 20"
     )
 
     # Volumen
     volumen_actual = df["Volume"].iloc[-1]
+    volumen_actual = volumen_actual.iloc[0]
     volumen_prom_20 = df["Volumen_promedio_20"].iloc[-1]
+   # volumen_prom_20 = volumen_prom_20.iloc[0]
     volumen_eval = (
-        "📈 Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else "📉 Volumen bajo"
+        " Volumen alto" if not volumen_prom_20 and volumen_actual > volumen_prom_20 else " Volumen bajo"
     )
     # Bandas de Bollinger
     banda_sup = df['Banda_Superior'].iloc[-1]
     banda_inf = df['Banda_Inferior'].iloc[-1]
-    bollinger_eval = "En banda" if banda_inf <= precio_actual <= banda_sup else ("Sobrecomprado (fuera banda sup)" if precio_actual > banda_sup else "Sobrevendido (fuera banda inf)")
-
+    # bollinger_eval = "En banda" if banda_inf <= precio_actual <= banda_sup else ("Sobrecomprado (fuera banda sup)" if precio_actual > banda_sup else "Sobrevendido (fuera banda inf)")
+    if precio_actual > banda_sup:
+        bollinger_eval = "Sobrecomprado (fuera banda sup)"
+    elif precio_actual < banda_inf:
+        bollinger_eval = "Sobrevendido (fuera banda inf)"
+    else:
+        bollinger_eval = "En banda"
     # Recomendación general
     score = 0
     motivos = []
