@@ -158,15 +158,22 @@ def analisis_indicadores():
     else:
         macd_eval = "Señal de venta"
 
+   
     # Medias móviles
     sma_50 = df["SMA_50"].iloc[-1]
     sma_200 = df["SMA_200"].iloc[-1]
     ema_20 = df["EMA_20"].iloc[-1]
     precio_actual = df["Close"].iloc[-1]
 
-    sma_50_eval = "Precio > SMA 50" if precio_actual > sma_50 else "Baj Precio < SMA 50"
-    sma_200_eval = "Precio > SMA 200" if precio_actual > sma_200 else "Ba Precio < SMA 200"
-    ema_20_eval = "Precio > EMA 20" if precio_actual > ema_20 else "Baj Precio < EMA 20"
+    sma_50_eval = (
+        " Precio > SMA 50" if precio_actual > sma_50 else " Bajo Precio < SMA 50"
+    )
+    sma_200_eval = (
+        " Precio > SMA 200" if precio_actual > sma_200 else " Bajo Precio < SMA 200"
+    )
+    ema_20_eval = (
+        " Precio > EMA 20" if precio_actual > ema_20 else " Bajo Precio < EMA 20"
+    )
 
     # Volumen
     volumen_actual = df["Volume"].iloc[-1]
